@@ -1,0 +1,306 @@
+; Read dataset
+readdata, dir='/sma/data/science/mir_data/190108_06:09:35/'
+
+; 376 30s scans on target -> 3.1h on source
+; tau avg ~0.04 for the useful part of track -> PWV avg~0.5
+; HA at start of track~-0.85 -> Expected dual RX RMS 0.18 single RX 0.26
+
+; examine
+select
+;All Sources:   3c84 0319+415 Uranus 0510+180 0532+075 HD34700 0433+053
+;All Baselines:  1-2 1-3 1-4 1-5 1-6 1-7 1-8 2-3 2-4 2-5 2-6 2-7 2-8 3-4 3-5 3-6 3-7 3-8 4-5 4-6 4-7 4-8 5-6 5-7 5-8 6-7 6-8 7-8
+;All Recs:  230 240
+;All Bands:  c1 s1 s2 s3 s4
+;All Sidebands :  l u
+;All Polarization states:  hh vv hv vh
+;All Integrations: 1-706
+
+
+; Reduce receiver(RX) 230 first
+select, /re, /p, rx=230
+plot_continuum, x='int'
+
+; Removing pointing
+result=dat_filter(s_f, '"integ" lt "6"', /reset)
+flag, /flag
+select, /p, /re, rx=230
+
+; Remove useless sources if any
+
+; Check all corrected 
+plot_continuum, x='int'
+
+; Quick spectral check on bandpass cal
+plot_spectra, source='3c84'
+; Nothing obvious apart from edges which are typically bad, need to trim them, also some spikes which we will remove
+; See how much of the edges we can/should trim at edges
+select, /p, /re, rx=230, band='s1'
+plot_spectra, source='3c84', ntrim=1040
+; Repeated for all bands. Trimming 1040 channels is sufficient.
+
+
+; Automatic despiking using GAIN calibrators (doesnt work on bright sources such as FLUX (planets) or BANDPASS calibrators)
+select, /p, /re, rx=230
+uti_checkspike, source='0510+180', /baseline, ntrim=1040
+;Spike found in RX 230, Sideband L, Band s1, Baseline 2-7,Channel 15342
+;Spike found in RX 230, Sideband L, Band s1, Baseline 2-7,Channel 15343
+;Spike found in RX 230, Sideband L, Band s1, Baseline 3-5,Channel 8192
+;Spike found in RX 230, Sideband L, Band s1, Baseline 3-7,Channel 15342
+;Spike found in RX 230, Sideband L, Band s1, Baseline 7-8,Channel 15342
+;Spike found in RX 230, Sideband U, Band s1, Baseline 2-7,Channel 15342
+;Spike found in RX 230, Sideband U, Band s1, Baseline 3-5,Channel 8192
+;Spike found in RX 230, Sideband L, Band s2, Baseline 2-7,Channel 15449
+;Spike found in RX 230, Sideband L, Band s2, Baseline 7-8,Channel 15449
+;Spike found in RX 230, Sideband U, Band s2, Baseline 2-7,Channel 15449
+;Spike found in RX 230, Sideband L, Band s4, Baseline 2-5,Channel 7986
+
+
+
+
+; Then check the other gain cal to see that spikes are mostly the same.
+uti_checkspike, source='0532+075', /baseline, ntrim=1040
+;Spike found in RX 230, Sideband L, Band s1, Baseline 2-7,Channel 15342
+;Spike found in RX 230, Sideband L, Band s1, Baseline 2-7,Channel 15343
+;Spike found in RX 230, Sideband L, Band s1, Baseline 3-5,Channel 8192
+;Spike found in RX 230, Sideband L, Band s1, Baseline 3-7,Channel 15342
+;Spike found in RX 230, Sideband L, Band s1, Baseline 7-8,Channel 15342
+;Spike found in RX 230, Sideband U, Band s1, Baseline 2-7,Channel 15343
+;Spike found in RX 230, Sideband U, Band s1, Baseline 3-5,Channel 8192
+;Spike found in RX 230, Sideband L, Band s2, Baseline 2-7,Channel 15449
+;Spike found in RX 230, Sideband L, Band s2, Baseline 2-7,Channel 15450
+;Spike found in RX 230, Sideband L, Band s2, Baseline 7-8,Channel 15449
+;Spike found in RX 230, Sideband U, Band s2, Baseline 2-7,Channel 15449
+
+
+; Fix all the spikes, in each frequency chunk (s1,s2,s3 or s4) by interpolating between neighboring channels
+select, rx=230, /p, /re, band='s1'
+uti_chanfix, chan=[15342], sample=5
+uti_chanfix, chan=[15343], sample=5
+uti_chanfix, chan=[8192], sample=3
+select, rx=230, /p, /re, band='s2'
+uti_chanfix, chan=[15449], sample=5
+uti_chanfix, chan=[15450], sample=5
+select, rx=230, /p, /re, band='s4'
+uti_chanfix, chan=[15449], sample=3
+uti_chanfix, chan=[15450], sample=3
+
+
+
+; Recheck whether sources have any more spikes quickly by eye, by checking each of the 4 chunks for all sources
+;chunk s1
+select, rx=230, /p, /re, band='s1'
+plot_spectra, ntrim=1040
+uti_chanfix, chan=[14561], sample=20
+uti_chanfix, chan=[14562], sample=20
+uti_chanfix, chan=[14560], sample=20
+uti_chanfix, chan=[14559], sample=20
+uti_chanfix, chan=[14563], sample=20
+uti_chanfix, chan=[14564], sample=20
+
+select, rx=230, /p, /re, band='s2'
+plot_spectra, ntrim=1040
+uti_chanfix, chan=[2210], sample=20
+uti_chanfix, chan=[2211], sample=20
+uti_chanfix, chan=[2212], sample=20
+uti_chanfix, chan=[2213], sample=20
+uti_chanfix, chan=[2214], sample=20
+
+select, rx=230, /p, /re, band='s3'
+plot_spectra, ntrim=1040
+
+select, rx=230, /p, /re, band='s4'
+plot_spectra, ntrim=1040
+uti_chanfix, chan=[7986], sample=3
+
+; Recreate continuum (by averaging all the frequency channels together) after flagging/despiking
+select, rx=230, /p, /re
+uti_avgband, swmch1=1041, swmch2=15344
+plot_continuum
+
+
+; check system temperatures for any spikes
+plot_var,x='int',frames=16
+; All looks nice. 
+
+; Apply system temperature correction which brings amplitudes to Jy and takes care of atmospheric attenuation
+apply_tsys
+; Check amplitudes are roughly what you'd expect in Jy (no crazy high or crazy low numbers, quasars around 0.1-10 Jy, planets between few and few tens of Jy).
+plot_continuum
+; Looks nice
+select, rx=230,/p,/re
+
+; save progress in local directory if you want
+mir_save,/new,'mir.230.tsys'
+
+
+
+
+; Now on to BANDPASS calibration
+; recheck passband calibrator for any more spikes or weird things
+plot_spectra,source='3c84', ntrim=1040
+; all ok, ready for bandpass cal.
+
+; phase first
+select, rx=230, /p, /re
+
+pass_cal,cal_type='pha',tel_bsl='telescope',preavg=2, smoothing=1,refant=1,ntrim=1040
+all no
+3c84 yes
+; Applied
+
+;Regenerate continuum by channel averaging
+select, rx=230, /p, /re
+uti_avgband, swmch1=1041, swmch2=15344
+
+;check that bandpass calibration of phase worked nicely by looking at the phase of the GAIN calibrators (which are also quasars, so phases should be flat with frequency).
+;checking the BANDPASS calibrator not needed as it will be flat by default (since we used it to calibrate!)
+plot_spectra,ntrim=1040, preavg=50
+;all phases good, nice and flat vs frequency
+
+
+; amplitude calibration
+pass_cal,cal_type='amp',tel_bsl='telescope',preavg=2,smoothing=1,ntrim=1040,refant=1
+3c84 yes
+; Applied
+
+
+; check results once again focusing on GAIN calibrators
+plot_spectra,ntrim=1040, preavg=400
+; amplitudes as well as phases of gain cals are all seems good, i.e. nice and flat vs frequency.
+
+
+;Regenerate continuum by channel averaging
+select, rx=230, /p, /re
+uti_avgband, swmch1=1041, swmch2=15344
+
+
+; save progress in local directory. THIS NEEDS TO BE DONE AS WE NEED THIS SAVE STATE LATER.
+select, rx=230, /p, /re
+mir_save,/new,'mir.230.tsys.pass'
+
+
+
+
+; look for measurements of both the GAIN calibrators and the FLUX calibrators that were close together in elevation. We will use only these integrations (or scans) to set the amplitude scale of the gain cals.
+; this is because we do not really know how bright the quasars that we use as gain cals should be (amplitudes vary with time), so we use observations of a Solar System object, whose amplitudes are very stable with time, to tell
+plot_var,x='int',y='el'
+; Uranus is our Solar System object. Select scans we are interested in with dat_filter function (similar to 'select', but more powerful)
+result=dat_filter(s_f,'"wt" gt "0" and "rec" eq "230" and "el" ge "50.0" and "el" le "60.0" and ("source" eq "0510+180" or "source" eq "0532+075" or "source" eq "Uranus")',/reset)
+; check that I did the right thing and that I have at least a couple of rounds of each gain cal in this elevation range
+plot_var,x='int',y='el'
+
+; quick check for discountinuities/phase jumps.
+plot_continuum
+; phases look ok. 
+
+; First run a self-cal on phase to align all the phases. We know what the phases should be for all the objects as a function of time (0 for quasars, and the code has a model for the planet so it knows what its phase should be).
+; This means we are really just using the objects to calibrate themselves (i.e. measure gains vs time, and apply them to the objects themselves)
+gain_cal,cal_type='pha',x_var='hours',tel_bsl='telescope',refant=1,/non_point,/connect
+all yes
+
+plot_continuum
+; Looking ok, all quasars phases flat around 0 (note plot y axis scale changed)
+
+; Now calibrate amplitudes using internal model of flux calibrator. Measure gains vs time using planet (we know its amplitudes from model) and apply them to the quasars.
+gain_cal,cal_type='amp',x_var='hours',tel_bsl='telescope',refant=1,/non_point,poly=0
+all no
+Uranus yes
+; Everything very reasonable, gains around 0.8-1.2 as you'd expect
+
+
+plot_continuum
+; All looking ok
+
+
+; Check Flux vs uvdistance to make sure it's flat for gain cals (quasars). Solar System objects, on the other hand, typically resolved
+plot_var,x='prbl',y='ampave',frame_var='sb',color='source'
+; Looks ok!
+
+; And now measure the flux of the 2 gain cals after having flux-calibrated them, and compare with tabulated values on SMA website
+flux_measure
+V (vector average)
+
+; Result:
+Vector average: 
+#   Source   Flags   Nscans  Flux(Jy)   SNR    meantime    REAL       IMAG
+    Uranus      g      22   26.4705     109      7.39     26.4705     -0.0019
+  0510+180              9    1.7818     507     10.92      1.7818      0.0004
+  0532+075              8    0.9684     373     11.00      0.9684     -0.0005
+
+
+; Now restore previous, bandpass-calibrated data
+mir_restore,'mir.230.tsys.pass' 
+
+; select only target and GAIN calibrators (since we now want to correct for the time dependence of phase and amplitude corruptions)
+select, rx=230,/p,/re,source=['HD34700','0510+180', '0532+075']
+; plot data (frequency-averaged, i.e. continuum) vs time
+plot_continuum,x='int'
+; average consecutive integrations in time to decrease the 'noisyness' of the data, and detect e.g. phase jumps more clearly
+plot_continuum,x='int', /preavg
+
+; now do gain calibration. Phase first. Remember to insert the fluxes we measured for the gain calibrator previously through flux calibration.
+gain_cal,x='hours',tel_bsl='telescope',refant=1,cal_type='pha',/preavg,smooth=0.1
+0510+180 yes 1.7818
+0532+075 yes 0.9684
+
+; Check that the phases are flat as a function of time for the quasars (as you'd expect if everything worked well)
+plot_continuum,x='int', /pre
+
+; now do gain calibration for amplitudes
+gain_cal,x='hours',tel_bsl='telescope',refant=1, cal_type='amp',/preavg,smooth=0.1
+0510+180 yes 1.7818
+0532+075 yes 0.9684
+
+; Check that amplitudes here are flat as a function of time, and that amplitudes correspond roughly to the quasar fluxes we inputted
+plot_continuum,x='int'
+; Amps nice and flat
+
+; final check
+plot_continuum,/preavg
+
+; Fix velocity issue for this specific dataset
+uti_doppler_fix,raref=3.7366536,decref=0.80440732,source='HD34700'
+
+; save final calibrated dataset
+mir_save,/new,'mir.230.tsys.pass.gain'
+
+
+; ---------- END OF CALIBRATION (BUT REMEMBER DO EXPORT FURTHER DOWN) ------------
+
+; Now do some basic quick analysis of the calibrated visibilities, and IMPORTANTLY EXPORT THE DATA USING AUTOFITS FOR LATER IMAGING IN CASA SOFTWARE.
+
+; measure RMS noise level in continuum visibility amplitudes along time axis in each sideband. This should ~correspond to noise in the final image.
+
+select,/p,/re,source='HD34700',sideband='l',band='c1', rx=230
+uti_rms
+;0.43 mJy/beam
+
+select,/p,/re,source='HD34700',sideband='u',band='c1', rx=230
+uti_rms
+;0.56 mJy/beam
+
+
+; Try to use the basic MIR imaging tools to 1) check the gain calibrators (quasars) looking for issues (they are unresolved, so their image should look pretty much the same as dirty beam. If not, or if weird structure is seen, we are in trouble). This needs to be done unfortunately on a 'per-sideband' basis.
+select, source='0510+180',sideband='l',band='c1', /p, /re, rx=230
+plot_map
+select, source='0510+180',sideband='u',band='c1', /p, /re, rx=230
+plot_map
+select, source='0532+075',sideband='l',band='c1', /p, /re, rx=230
+plot_map
+select, source='0532+075',sideband='u',band='c1', /p, /re, rx=230
+plot_map
+
+; Now finally take a first quick look at the image for the target 
+select, source='HD34700',sideband='l',band='c1', /p, /re, rx=230
+plot_map
+select, source='HD34700',sideband='u',band='c1', /p, /re, rx=230
+plot_map
+
+
+; Now write calibrated visibilities to UVFITS format files which we can later read into CASA for imaging 
+select,/p,/re, rx=230
+autofits, source='HD34700'
+
+
+
+; ------------- DONE! NOW IMPORT AND IMAGING IN CASA ------------
