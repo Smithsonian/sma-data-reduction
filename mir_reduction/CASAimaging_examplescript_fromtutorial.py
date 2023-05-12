@@ -1,7 +1,7 @@
 #Follow the online instructions to get data from MIR-printed UVFITS into CASA:
-import sys 
-sys.path.append('data/HD127821/.') 
-import MIRFITStoCASA 
+import sys
+sys.path.append('data/HD127821/.')
+import MIRFITStoCASA
 fullvis='data/HD127821/HD127821_track6.ms' #Change name to something appropriate
 allNames = []
 for sou in ['HD127821']: #Change name to exact source name from MIR (beginning characters of UVFITS files)
@@ -10,9 +10,9 @@ for sou in ['HD127821']: #Change name to exact source name from MIR (beginning c
 			for i in ['1','2','3','4']: #Select applicable chunks
 				name = sou+"_"+sb+"_S"+i+"_RX"+rx
 				print("------converting "+name+" ....")
-				MIRFITStoCASA.MIRFITStoCASA(UVFITSname=name+'.UVFITS', MSname=name+'.ms')  
+				MIRFITStoCASA.MIRFITStoCASA(UVFITSname=name+'.UVFITS', MSname=name+'.ms')
 				allNames.append(name+'.ms')
-				
+
 #Check CASA MS files containing visibilities are there and well:
 !ls -d ./*.ms
 
@@ -23,12 +23,14 @@ concat(vis=allNames,concatvis=fullvis,timesort=True) #(Safely ignore warnings ab
 listobs(fullvis)
 
 #Then flag (bad) edge channels, typically for nflagedge you want to use the same value as you did for 'ntrim' in MIR. ntotal can be found under '#Chans' in listobs
-nflagedge=130
-ntotal=2048
+nflagedge = 320
+ntotal = 4096
 #Execute flagging
-flagdata(vis=fullvis, mode='manualflag', spw='*:0~'+str(nflagedge)+';'+str(ntotal-nflagedge)+'~'+str(ntotal-1))
+flagdata(vis=fullvis, mode='manual', spw='*:0~{0};{1}~{2}'.format(nflagedge,
+                                                                  ntotal - nflagedge,
+                                                                  ntotal - 1))
 
-#Inspect visibilities with plotms task. Did we flag enough, are there any outliers? 
+#Inspect visibilities with plotms task. Did we flag enough, are there any outliers?
 #To plot time-averaged amplitudes as a function of channel, iterating over each spectral window (spw, i.e. chunk):
 plotms(vis=fullvis, xaxis='channel', yaxis='amp', avgtime='1e20', avgscan=True, iteraxis='spw')  #Remember to check every spw!
 #To plot full u-v coverage:
@@ -82,7 +84,7 @@ specmode='mfs' #For continuum imaging, use multi-frequency synthesis mode.
 
 #gridding and CLEAN algorithm choice. All of these, to begin with, are standard inputs, so we do not actually need to input them, but we will here for completeness.
 gridder='standard'
-deconvolver='hogbom' #Classic Hogbom 1974, but modified with major and minor cycles. 
+deconvolver='hogbom' #Classic Hogbom 1974, but modified with major and minor cycles.
 gain=0.1 #Standard loop gain gamma which is multiplied by the maximum intensity of the residual image and added to the model.
 threshold=0.0 #Do not use a global threshold for the residual image max in Jy to stop iterations, stop manually in interactive mode.
 nsigma=0.0 #Do not use a global threshold for the residual image max in nsigma*rms to stop iterations, stop manually in interactive mode.
@@ -123,7 +125,7 @@ freqmin=230.530 #in GHz
 freqmax=230.536 #in GHz
 #Now carry out continuum subtraction in u-v space through uvcontsub task, where this is done for each time interval and baseline.
 #The continuum is first fit at frequencies outside of the freqmin-to-freqmax range, and a polynomial of degree:
-fitorder=1 
+fitorder=1
 #is fitted and then subtracted from visibilities.
 fitspw='*:'+str(freqmin)+'~'+str(freqmax)+'GHz'
 excludechans=True #IMPORTANT to exclude rather than select frequency range in fitspw for continuum fitting.
@@ -158,7 +160,7 @@ restfreq='230.538e9' #Rest frequency of line of interest, in this case CO J=2-1.
 
 #gridding and CLEAN algorithm choice. All of these, to begin with, are standard inputs, so we do not actually need to input them, but we will here for completeness.
 gridder='standard'
-deconvolver='hogbom' #Classic Hogbom 1974, but modified with major and minor cycles. 
+deconvolver='hogbom' #Classic Hogbom 1974, but modified with major and minor cycles.
 gain=0.1 #Standard loop gain gamma which is multiplied by the maximum intensity of the residual image and added to the model.
 threshold=0.0 #Do not use a global threshold for the residual image max in Jy to stop iterations, stop manually in interactive mode.
 nsigma=0.0 #Do not use a global threshold for the residual image max in nsigma*rms to stop iterations, stop manually in interactive mode.
@@ -177,4 +179,3 @@ tclean(vis=vis, imagename=imagename, interactive=interactive, niter=niter, cell=
 
 #Finally, use the CASA viewer to check out your cube, which will be the .image file. Note that dirty beam (.psf file), primary beam (.pb file), residual (.res), model (.model) can all be accessed after CLEANing.
 viewer
-
