@@ -1,0 +1,11 @@
+spw='1:147'
+spw='10:147'
+
+spw='1:143'
+spw='10:143'
+
+spw='4:150'
+spw='7:150'
+
+# Low amps on this scan
+scan='32' antenna='6'
