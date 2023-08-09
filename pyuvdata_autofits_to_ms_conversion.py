@@ -85,21 +85,8 @@ def convert_mir_to_ms(datafolder,
         tracemalloc.start()
 
     # Grab the basename
-
-    if len(filenames) == 1:
-        filename_base = filenames[0].name
-    else:
-        # I'm assuming this is always 1 track and the date is therefore the same.
-        date_str = filenames[0].name.split("_")[0]
-        time_str = filenames[0].name.split("_")[1]
-        for filename in filenames[1:]:
-            this_time_str = filename.name.split("_")[1]
-            time_str += f"_{this_time_str}"
-        filename_base = f"{date_str}_{time_str}"
-
-    out_filename = outputdir / filename_base
-    uv_data.write_ms(f"{out_filename}_bin{rechunk}.ms", clobber=True,
-                     run_check=run_check)
+    out_filename = outputdir / datafolder.name
+    uv_data.write_ms(f"{out_filename}.ms", clobber=True)
     t4 = time.perf_counter()
     if verbose:
         print(f"Done write in: {(t4 - t3) / 60:.4f} min")
@@ -120,7 +107,7 @@ if __name__ == "__main__":
     import argparse
     from pathlib import Path
 
-    parser = argparse.ArgumentParser(description='Convert MIR to MS.')
+    parser = argparse.ArgumentParser(description='Convert MIR autofits to MS.')
 
     parser.add_argument('-f', '--filename',
                         type=str,
