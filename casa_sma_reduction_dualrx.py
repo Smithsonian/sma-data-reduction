@@ -130,6 +130,9 @@ from casaplotms import plotms
 vis = 'r64.rx230.ms'
 ###################
 
+if not os.path.exists(vis):
+    raise FileNotFoundError(f"Unable to find MS: {vis}")
+
 # Run listobs to identify the calibrator and target field names
 # to input below.
 output = listobs(vis)

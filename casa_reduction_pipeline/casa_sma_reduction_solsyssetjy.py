@@ -33,6 +33,10 @@ sma_pipe_config = config_file
 myvis = sma_pipe_config.get('SMA-Pipe', 'myvis')
 ###################
 
+if not os.path.exists(myvis):
+    raise FileNotFoundError(f"Unable to find MS: {myvis}")
+
+
 manual_flag_file = sma_pipe_config.get('SMA-Pipe', 'manual_flag_file')
 # Set to None if not filename is given
 if len(manual_flag_file) == 0:
