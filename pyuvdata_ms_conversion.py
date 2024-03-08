@@ -16,12 +16,14 @@ import tracemalloc
 def convert_mir_to_ms(filenames,
                       rechunk=1,
                       outputdir='./',
+                      antfile=None,
                       verbose=True,
                       run_check=True,
                       track_mem_usage=True):
 
 
     from pyuvdata import UVData
+    from pyuvdata.uvdata.mir import generate_sma_antpos_dict
 
     # Check if multiple filenames were given.
 
@@ -35,42 +37,25 @@ def convert_mir_to_ms(filenames,
 
     t0 = time.perf_counter()
 
-    for ii, filename in enumerate(filenames):
-
-        if verbose:
-            print(f"Reading in MIR: {filename}")
-
-        t1 = time.perf_counter()
-        if ii == 0:
-            uv_data.read(filename, rechunk=rechunk,
-                         run_check=run_check,)
-        else:
-            uv_data_part = UVData()
-            uv_data_part.read(filename, rechunk=rechunk,
-                              check_extra=check_extra)
-
-            uv_data = uv_data + uv_data_part
-
-        t2 = time.perf_counter()
-        if verbose:
-            print(f"Done read in: {(t2 - t1) / 60:.4f} min")
-
-    t3 = time.perf_counter()
     if verbose:
-        print(f"Total read in time: {(t3 - t0) / 60:.4f} min")
+        print(f"Reading in MIR: {[str(file) for file in filenames]}")
+
+    uv_data.read(filenames, rechunk=rechunk, run_check=run_check)
+
+    if antfile is not None:
+        if verbose:
+            print("Updating antenna positions.")
+        antpos = generate_sma_antpos_dict(antfile)
+        uv_data.update_antenna_positions(new_positions=antpos, delta_antpos=True)
+
+    t1 = time.perf_counter()
+    if verbose:
+        print(f"Total read in time: {(t1 - t0) / 60:.4f} min")
 
     if track_mem_usage:
         current, peak = tracemalloc.get_traced_memory()
         print(f"MIR read: Current memory during usage is {current / 10**6:.1f}MB; Peak was {peak / 10**6:.1f}MB")
         tracemalloc.stop()
-
-    # Note that this step is needed temporarily to work around a limitation
-    # in CASA w/ coordinate frames, and will not be required in the future
-    # for entry in uv_data.phase_center_catalog.keys():
-    #     uv_data.phase_center_catalog[entry]["cat_epoch"] = 2000.0
-
-    # TODO: ask to propagate this back in uvdata. Remove spacing in antenna names
-    uv_data.antenna_names = [ant.replace(" ", "") for ant in uv_data.antenna_names]
 
     # Now write out the file! Note that setting clobber=True will
     # overwrite any identically named measurement set.
@@ -96,14 +81,14 @@ def convert_mir_to_ms(filenames,
     out_filename = outputdir / filename_base
     uv_data.write_ms(f"{out_filename}_bin{rechunk}.ms", clobber=True,
                      run_check=run_check)
-    t4 = time.perf_counter()
+    t2 = time.perf_counter()
     if verbose:
-        print(f"Done write in: {(t4 - t3) / 60:.4f} min")
+        print(f"Done write in: {(t2 - t1) / 60:.4f} min")
 
     if verbose:
-        print(f"Read time: {(t3 - t0) / 60:.4f} min")
-        print(f"Write time: {(t4 - t3) / 60:.4f} min")
-        print(f"Total time: {(t4 - t0) / 60:.4f} min")
+        print(f"Read time: {(t1 - t0) / 60:.4f} min")
+        print(f"Write time: {(t2 - t1) / 60:.4f} min")
+        print(f"Total time: {(t2 - t0) / 60:.4f} min")
 
     if track_mem_usage:
         current, peak = tracemalloc.get_traced_memory()
@@ -120,7 +105,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-f', '--filename',
                         type=str,
-                        help='MIR filename')
+                        help='MIR filename (comma separated when reading multiple files)')
 
     parser.add_argument('-r', '--rechunk',
                         type=int,
@@ -132,6 +117,11 @@ if __name__ == "__main__":
 
     parser.add_argument('-n', '--nocheck', action='store_false')
 
+    parser.add_argument('-a', '--antfile',
+                        type=str,
+                        help="Updated antennas file (for baseline corrections)")
+
+
     args = parser.parse_args()
 
     print(f"Is check enabled? {args.nocheck}")
@@ -140,5 +130,6 @@ if __name__ == "__main__":
                       rechunk=args.rechunk,
                       outputdir=Path(args.outpath),
                       run_check=args.nocheck,
+                      antfile=Path(args.antfile),
                       )
 
