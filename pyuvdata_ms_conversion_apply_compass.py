@@ -38,15 +38,15 @@ def convert_mir_to_ms(filenames,
         if ii == 0:
 
             uv_data.read(filename, rechunk=rechunk,
-                         run_check=run_check,)
-                        #  compass_soln=compass_filename)
-                        #  applycal=True,
+                         run_check=run_check,
+                         compass_soln=compass_filename,
+                         apply_cal=True)
         else:
             uv_data_part = UVData()
             uv_data_part.read(filename, rechunk=rechunk,
                               run_check=run_check,
-                              compass_soln=compass_filename)
-                            #   applycal=True,
+                              compass_soln=compass_filename,
+                              apply_cal=True,)
 
             uv_data = uv_data + uv_data_part
 
