@@ -119,7 +119,8 @@ if __name__ == "__main__":
 
     parser.add_argument('-a', '--antfile',
                         type=str,
-                        help="Updated antennas file (for baseline corrections)")
+                        help="Updated antennas file (for baseline corrections)",
+                        default=None)
 
 
     args = parser.parse_args()
@@ -130,6 +131,6 @@ if __name__ == "__main__":
                       rechunk=args.rechunk,
                       outputdir=Path(args.outpath),
                       run_check=args.nocheck,
-                      antfile=Path(args.antfile),
+                      antfile=args.antfile if args.antfile is None else Path(args.antfile),
                       )
 
