@@ -119,6 +119,10 @@ def export_compass_gains(filename, outpath='.'):
     # Make sure that things work correctly.
     cal_obj.check()
 
+    # Create the subdirectory if it doesn't exist
+    if not os.path.exists(outpath):
+        os.mkdir(outpath)
+
     # First do the amplitude solns
     gain_solns_obj = cal_obj.copy()
     gain_solns_obj._select_by_index(
