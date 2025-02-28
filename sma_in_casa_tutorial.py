@@ -804,6 +804,7 @@ gaincal(vis=myvis,caltable=phaseshortgaincal_table,
         calmode='p',
         solint=min_solint,
         minsnr=2.0, minblperant=3,
+        corrdepflags=False,
         gaintable=[])
 
 # Plot the table to inspect the calibration solution
@@ -852,6 +853,7 @@ bandpass(vis=myvis,caltable=bandpass_table,
          combine='scan,field',
          refant=refant,
          solint=bpsolint, solnorm=True, minblperant=3,
+        corrdepflags=False,
          fillgaps=10,  # If some channels are flagged above, interpolate over in the BP
          gaintable=[phaseshortgaincal_table])
 
@@ -914,6 +916,7 @@ gaincal(vis=myvis,caltable=gain_phase_int_table,
         field=calfields,refant=refant,
         combine='spw',spw='0~5',
         calmode='p',solint=min_solint,minsnr=2.0,minblperant=3,
+        corrdepflags=False,
         gaintable=[bandpass_table])
 # USB
 # Note the same `caltable` name with `append=True`
@@ -921,6 +924,7 @@ gaincal(vis=myvis,caltable=gain_phase_int_table, append=True,
         field=calfields, refant=refant,
         combine='spw',spw='6~11',
         calmode='p',solint=min_solint,minsnr=2.0,minblperant=3,
+        corrdepflags=False,
         gaintable=[bandpass_table])
 
 # Receiver 2 (rx240):
@@ -929,12 +933,14 @@ gaincal(vis=myvis,caltable=gain_phase_int_table, append=True,
         field=calfields,refant=refant,
         combine='spw',spw='12~17',
         calmode='p',solint=min_solint,minsnr=2.0,minblperant=3,
+        corrdepflags=False,
         gaintable=[bandpass_table])
 # USB
 gaincal(vis=myvis,caltable=gain_phase_int_table, append=True,
         field=calfields, refant=refant,
         combine='spw',spw='18~23',
         calmode='p',solint=min_solint,minsnr=2.0,minblperant=3,
+        corrdepflags=False,
         gaintable=[bandpass_table])
 
 
@@ -975,6 +981,7 @@ gaincal(vis=myvis,caltable=gain_phase_scan_table,
         field=calfields,refant=refant,
         combine='spw',spw='0~5',
         calmode='p',solint=long_solint,minsnr=2.0,minblperant=3,
+        corrdepflags=False,
         gaintable=[bandpass_table])
 # USB
 # Note the same `caltable` name with `append=True`
@@ -982,6 +989,7 @@ gaincal(vis=myvis,caltable=gain_phase_scan_table, append=True,
         field=calfields, refant=refant,
         combine='spw',spw='6~11',
         calmode='p',solint=long_solint,minsnr=2.0,minblperant=3,
+        corrdepflags=False,
         gaintable=[bandpass_table])
 
 # Receiver 2 (rx240):
@@ -990,12 +998,14 @@ gaincal(vis=myvis,caltable=gain_phase_scan_table, append=True,
         field=calfields,refant=refant,
         combine='spw',spw='12~17',
         calmode='p',solint=long_solint,minsnr=2.0,minblperant=3,
+        corrdepflags=False,
         gaintable=[bandpass_table])
 # USB
 gaincal(vis=myvis,caltable=gain_phase_scan_table, append=True,
         field=calfields, refant=refant,
         combine='spw',spw='18~23',
         calmode='p',solint=long_solint,minsnr=2.0,minblperant=3,
+        corrdepflags=False,
         gaintable=[bandpass_table])
 
 
@@ -1063,6 +1073,7 @@ gaincal(vis=myvis,caltable=gain_amp_scan_table,
         combine='',
         spwmap=[[],this_spwmap],
         calmode='a', solint=amp_solint, minsnr=3.0, minblperant=3,
+        corrdepflags=False,
         gaintable=[bandpass_table,
                    gain_phase_int_table])
 
